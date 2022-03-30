@@ -1,4 +1,4 @@
-module alu(i_datain, gr1, gr2, zero, negative, overflow, c);
+module alu(i_datain, gr1, gr2, zero, neg, overflow, c);
 
 output signed[31:0] c;
 
@@ -6,7 +6,7 @@ output signed[31:0] c;
 output zero;
 output overflow;
 output neg;
-reg [31:0] lo, hi;
+reg zero, overflow, neg;
 
 input signed[31:0] i_datain, gr1, gr2;
 
@@ -26,7 +26,7 @@ parameter Width = 32;
 parameter MSB = Width - 1;
 reg [31:0] unsigned_regB, unsigned_regA;
 
-always @(*)
+always @(imm, gr1, gr2)
 begin
 
 sa = i_datain[10:6];
@@ -44,9 +44,9 @@ case(opcode)
             reg_A = gr1;
             reg_B = gr2;
             reg_C = reg_A + reg_B;
-            overflow = ((reg_A[31] == reg_B[31]) && (~reg_C[31] == reg_A[31])?1:0;
-            zero = (reg_C)?1:0;
-            neg = reg_C[MSB];
+            overflow <= ((reg_A[31] == reg_B[31]) && (~reg_C[31] == reg_A[31]))?1:0;
+            zero <= (reg_C) ? 0 : 1;
+            neg <= reg_C[MSB];
         end
 
         //addu
@@ -56,7 +56,7 @@ case(opcode)
             reg_B = gr2;
             unsigned_regB = gr2;
             reg_C = unsigned_regA + unsigned_regB;
-            zero = (reg_C)?1:0;
+            zero = (reg_C) ? 0 : 1;
             overflow = 1'b0;
             neg = 1'b0;
         end
@@ -147,7 +147,7 @@ case(opcode)
         //sll
         6'h0:begin
             reg_A = gr1;
-            reg_B = {{27{1'b0}}, shamt};
+            reg_B = {{27{1'b0}}, sa};
             reg_C = reg_A << reg_B;
             overflow = 1'b0;
             neg = reg_C[MSB];
@@ -167,7 +167,7 @@ case(opcode)
         //srl
         6'h2: begin
             reg_A = gr1;
-            reg_B = {{27{1'b0}}, shamt};
+            reg_B = {{27{1'b0}}, sa};
             reg_C = reg_A >> reg_B;
             overflow = 1'b0;
             neg = reg_C[MSB];
@@ -187,7 +187,7 @@ case(opcode)
         //sra
         6'h3: begin
             reg_A = gr1;
-            reg_B = {{27{1'b0}}, shamt};
+            reg_B = {{27{1'b0}}, sa};
             reg_C = reg_A >>> reg_B;
             overflow = 1'b0;
             neg = reg_C[MSB];
@@ -197,7 +197,7 @@ case(opcode)
         //srav
         6'h7:begin
             reg_A = gr1;
-            reg_B = gr2
+            reg_B = gr2;
             reg_C = reg_A >>> reg_B;
             overflow = 1'b0;
             neg = reg_C[MSB];
@@ -215,7 +215,7 @@ default:begin //I-Type
             reg_B = imm;
             reg_A = gr1;
             reg_C = reg_A + reg_B;
-            overflow = ((reg_A[31] == reg_B[31]) && (~reg_C[31] == reg_A[31])?1:0;
+            overflow = ((reg_A[31] == reg_B[31]) && (~reg_C[31] == reg_A[31]))?1:0;
             zero = (reg_C)?1:0;
             neg = reg_C[MSB];
         end
